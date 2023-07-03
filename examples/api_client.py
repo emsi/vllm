@@ -16,15 +16,19 @@ def clear_line(n: int = 1) -> None:
 
 def post_http_request(prompt: str,
                       api_url: str,
+                      *,
                       n: int = 1,
+                      use_beam_search: bool = True,
+                      temperature: float = 0.0,
+                      max_tokens: int = 16,
                       stream: bool = False) -> requests.Response:
     headers = {"User-Agent": "Test Client"}
     pload = {
         "prompt": prompt,
         "n": n,
-        "use_beam_search": True,
-        "temperature": 0.0,
-        "max_tokens": 16,
+        "use_beam_search": use_beam_search,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
         "stream": stream,
     }
     response = requests.post(api_url, headers=headers, json=pload, stream=True)
@@ -53,17 +57,20 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int, default=8000)
     parser.add_argument("--n", type=int, default=4)
     parser.add_argument("--prompt", type=str, default="San Francisco is a")
+    parser.add_argument("--use_beam_search", action="store_true", default=True)
+    parser.add_argument("--max_tokens", type=int, default=64)
+    parser.add_argument("--temperature", type=float, default=0.0)
     parser.add_argument("--stream", action="store_true")
     args = parser.parse_args()
     prompt = args.prompt
     api_url = f"http://{args.host}:{args.port}/generate"
-    n = args.n
-    stream = args.stream
 
     print(f"Prompt: {prompt!r}\n", flush=True)
-    response = post_http_request(prompt, api_url, n, stream)
+    response = post_http_request(prompt, api_url, n=args.n, use_beam_search=args.use_beam_search,
+                                max_tokens=args.max_tokens, temperature=args.temperature,
+                                stream=args.stream)
 
-    if stream:
+    if args.stream:
         num_printed_lines = 0
         for h in get_streaming_response(response):
             clear_line(num_printed_lines)
